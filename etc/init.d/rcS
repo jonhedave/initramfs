@@ -1,0 +1,28 @@
+#!/bin/sh
+
+mkdir -p /proc
+mkdir -p /sys
+mkdir -p /var/shm
+mkdir -p /var/run
+mkdir -p /var/tmp
+mkdir -p /tmp
+mkdir -p /home/tc
+mkdir -p /root
+mkdir -p /dev
+
+/bin/mount -t tmpfs mdev /dev
+mkdir /dev/pts
+/bin/mount -t devpts devpts /dev/pts
+
+echo "Mount everything"
+/bin/mount -a
+
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+/sbin/mdev -s
+
+echo "Setup networking"
+/sbin/ifconfig lo 127.0.0.1 up
+/sbin/route add 127.0.0.1 lo &
+/sbin/ifconfig eth0 up
+/sbin/udhcpc -b -i eth0 -h $(/bin/hostname) -p /var/run/udhcpc.eth0.pid >/dev/null 2>&1 &
+/usr/bin/netserver -p 8888
